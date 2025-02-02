@@ -22,15 +22,32 @@ Trivy is a powerful vulnerability scanner for containers, Kubernetes, and code r
    ```sh
    brew install aquasecurity/trivy/trivy  # macOS
    sudo apt install trivy                 # Debian/Ubuntu
-   ````
+   ```
    More installation methods: [Trivy Docs](https://aquasecurity.github.io/trivy/v0.45/getting-started/installation/)
 
-2. Run a scan and generate an HTML report with the enhanced template:
+2. **Configure the template path using an environment variable** *(Recommended)*:
+   
+   To avoid copying the template to each working directory, store it in a centralized location (e.g., `~/trivy/templates/`). Then, set an environment variable:
+   
    ```sh
-   trivy image --format template --template @enhanced-template.tpl -o report.html your-image-name
+   export TRIVY_HTML_TEMPLATE="@$HOME/trivy/templates/enhanced-template.tpl"
+   ```
+   
+   Add this line to your `~/.bashrc`, `~/.zshrc`, or equivalent shell configuration file for persistence.
+
+4. Run a scan and generate an HTML report using the environment variable:
+   
+   ```sh
+   trivy image --format template --template $TRIVY_HTML_TEMPLATE -o report.html your-image-name
+   ```
+   
+   Alternatively, specify the template path manually:
+   
+   ```sh
+   trivy image --format template --template @/Users/your-user/trivy/templates/enhanced-template.tpl -o report.html your-image-name
    ```
 
-3. Open `report.html` in your browser to explore the enhanced visualization.
+5. Open `report.html` in your browser to explore the enhanced visualization.
 
 ## 🚀 Contributing
 
