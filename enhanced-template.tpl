@@ -239,6 +239,31 @@
             padding: 0 0.5rem;
             border-radius: 4px;
         }
+
+        .summary-filter {
+            border: none;
+            cursor: pointer;
+            font: inherit;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .summary-filter:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+
+        .summary-filter.is-active {
+            box-shadow: 0 0 0 2px var(--accent-color);
+        }
+
+        .summary-filter:focus-visible {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+
+        .is-hidden {
+            display: none !important;
+        }
         
         .count-CRITICAL { background-color: var(--severity-critical-bg); color: var(--severity-critical-text); }
         .count-HIGH { background-color: var(--severity-high-bg); color: var(--severity-high-text); }
@@ -318,6 +343,73 @@
                     }
                 }
             });
+
+            const globalFilter = new Set();
+            const sectionFilters = new Map();
+
+            const applyFilters = () => {
+                const globalActive = globalFilter.size > 0;
+
+                document.querySelectorAll('.target-section').forEach(section => {
+                    const sectionId = section.dataset.sectionId;
+                    const activeSet = globalActive
+                        ? globalFilter
+                        : (sectionFilters.get(sectionId) || new Set());
+
+                    const rows = Array.from(section.querySelectorAll('tr[data-severity]'));
+                    let visibleCount = 0;
+
+                    rows.forEach(row => {
+                        const severity = row.dataset.severity;
+                        const visible = activeSet.size === 0 || activeSet.has(severity);
+                        row.style.display = visible ? '' : 'none';
+                        if (visible) {
+                            visibleCount += 1;
+                        }
+                    });
+
+                    section.querySelectorAll('table').forEach(table => {
+                        const tableRows = Array.from(table.querySelectorAll('tr[data-severity]'));
+                        const tableVisible = activeSet.size === 0 || tableRows.some(row => row.style.display !== 'none');
+                        table.classList.toggle('is-hidden', !tableVisible);
+                    });
+
+                    section.classList.toggle('is-hidden', activeSet.size > 0 && visibleCount === 0);
+                });
+            };
+
+            document.querySelectorAll('.summary-filter').forEach(button => {
+                button.addEventListener('click', event => {
+                    event.stopPropagation();
+                    const severity = button.dataset.severity;
+                    const scope = button.dataset.scope;
+
+                    if (scope === 'global') {
+                        if (globalFilter.has(severity)) {
+                            globalFilter.delete(severity);
+                            button.classList.remove('is-active');
+                        } else {
+                            globalFilter.add(severity);
+                            button.classList.add('is-active');
+                        }
+                    } else {
+                        const sectionId = button.dataset.sectionId;
+                        if (!sectionFilters.has(sectionId)) {
+                            sectionFilters.set(sectionId, new Set());
+                        }
+                        const sectionSet = sectionFilters.get(sectionId);
+                        if (sectionSet.has(severity)) {
+                            sectionSet.delete(severity);
+                            button.classList.remove('is-active');
+                        } else {
+                            sectionSet.add(severity);
+                            button.classList.add('is-active');
+                        }
+                    }
+
+                    applyFilters();
+                });
+            });
         };
     </script>
 </head>
@@ -357,20 +449,20 @@
     {{- $globalTotal := add (add (add (add $totalCritical $totalHigh) $totalMedium) $totalLow) $totalUnknown }}
     <div class="global-summary">
         <div><strong>Total:</strong> {{ $globalTotal }} </div>
-        <div><span class="summary-count count-UNKNOWN">UNKNOWN: {{ $totalUnknown }}</span></div>
-        <div><span class="summary-count count-LOW">LOW: {{ $totalLow }}</span></div>
-        <div><span class="summary-count count-MEDIUM">MEDIUM: {{ $totalMedium }}</span></div>
-        <div><span class="summary-count count-HIGH">HIGH: {{ $totalHigh }}</span></div>
-        <div><span class="summary-count count-CRITICAL">CRITICAL: {{ $totalCritical }}</span></div>
+        <div><button class="summary-count summary-filter count-UNKNOWN" data-severity="UNKNOWN" data-scope="global">UNKNOWN: {{ $totalUnknown }}</button></div>
+        <div><button class="summary-count summary-filter count-LOW" data-severity="LOW" data-scope="global">LOW: {{ $totalLow }}</button></div>
+        <div><button class="summary-count summary-filter count-MEDIUM" data-severity="MEDIUM" data-scope="global">MEDIUM: {{ $totalMedium }}</button></div>
+        <div><button class="summary-count summary-filter count-HIGH" data-severity="HIGH" data-scope="global">HIGH: {{ $totalHigh }}</button></div>
+        <div><button class="summary-count summary-filter count-CRITICAL" data-severity="CRITICAL" data-scope="global">CRITICAL: {{ $totalCritical }}</button></div>
     </div>
 
-    {{- range . }}
+    {{- range $index, $target := . }}
         {{- $critical := 0 }}
         {{- $high := 0 }}
         {{- $medium := 0 }}
         {{- $low := 0 }}
         {{- $unknown := 0 }}
-        {{- range .Vulnerabilities }}
+        {{- range $target.Vulnerabilities }}
             {{- if eq .Vulnerability.Severity "CRITICAL" }}
                 {{- $critical = add $critical 1 }}
             {{- else if eq .Vulnerability.Severity "HIGH" }}
@@ -384,22 +476,22 @@
             {{- end }}
         {{- end }}
         {{- $sectionTotal := add (add (add (add $critical $high) $medium) $low) $unknown }}
-    <div class="target-section">
+    <div class="target-section" data-section-id="section-{{ $index }}">
         <div class="target-header">
             <div>
-                <strong>Type:</strong> {{ .Type | toString | escapeXML }} | 
-                <strong>Target:</strong> {{ .Target | toString | escapeXML }} | 
+                <strong>Type:</strong> {{ $target.Type | toString | escapeXML }} | 
+                <strong>Target:</strong> {{ $target.Target | toString | escapeXML }} | 
                 <strong>Total:</strong> {{ $sectionTotal }} 
-                <span class="summary-count count-UNKNOWN">UNKNOWN: {{ $unknown }}</span>
-                <span class="summary-count count-LOW">LOW: {{ $low }}</span>
-                <span class="summary-count count-MEDIUM">MEDIUM: {{ $medium }}</span>
-                <span class="summary-count count-HIGH">HIGH: {{ $high }}</span>
-                <span class="summary-count count-CRITICAL">CRITICAL: {{ $critical }}</span>
+                <button class="summary-count summary-filter count-UNKNOWN" data-severity="UNKNOWN" data-scope="section" data-section-id="section-{{ $index }}">UNKNOWN: {{ $unknown }}</button>
+                <button class="summary-count summary-filter count-LOW" data-severity="LOW" data-scope="section" data-section-id="section-{{ $index }}">LOW: {{ $low }}</button>
+                <button class="summary-count summary-filter count-MEDIUM" data-severity="MEDIUM" data-scope="section" data-section-id="section-{{ $index }}">MEDIUM: {{ $medium }}</button>
+                <button class="summary-count summary-filter count-HIGH" data-severity="HIGH" data-scope="section" data-section-id="section-{{ $index }}">HIGH: {{ $high }}</button>
+                <button class="summary-count summary-filter count-CRITICAL" data-severity="CRITICAL" data-scope="section" data-section-id="section-{{ $index }}">CRITICAL: {{ $critical }}</button>
             </div>
             <span class="collapse-indicator">▶</span>
         </div>
         <div class="target-content">
-            {{- if (eq (len .Vulnerabilities) 0) }}
+            {{- if (eq (len $target.Vulnerabilities) 0) }}
             <p>No Vulnerabilities found</p>
             {{- else }}
             <table>
@@ -411,8 +503,8 @@
                     <th>Fixed Version</th>
                     <th>Links</th>
                 </tr>
-                {{- range .Vulnerabilities }}
-                <tr>
+                {{- range $target.Vulnerabilities }}
+                <tr data-severity="{{ escapeXML .Vulnerability.Severity }}">
                     <td class="nowrap"><strong>{{ escapeXML .PkgName }}</strong></td>
                     <td class="nowrap">{{ escapeXML .VulnerabilityID }}</td>
                     <td class="align-center"><span class="severity severity-{{ escapeXML .Vulnerability.Severity }}">{{ escapeXML .Vulnerability.Severity }}</span></td>
@@ -428,7 +520,7 @@
             </table>
             {{- end }}
 
-            {{- if (eq (len .Misconfigurations ) 0) }}
+            {{- if (eq (len $target.Misconfigurations ) 0) }}
             <p>No Misconfigurations found</p>
             {{- else }}
             <table>
@@ -439,8 +531,8 @@
                     <th>Severity</th>
                     <th>Message</th>
                 </tr>
-                {{- range .Misconfigurations }}
-                <tr>
+                {{- range $target.Misconfigurations }}
+                <tr data-severity="{{ escapeXML .Severity }}">
                     <td>{{ escapeXML .Type }}</td>
                     <td>{{ escapeXML .ID }}</td>
                     <td>{{ escapeXML .Title }}</td>
