@@ -380,6 +380,10 @@
                         table.classList.toggle('is-hidden', !tableVisible);
                     });
 
+                    section.querySelectorAll('.section-empty').forEach(message => {
+                        message.classList.toggle('is-hidden', activeSet.size > 0);
+                    });
+
                     const emptyMessage = section.querySelector('.filter-empty');
                     if (emptyMessage) {
                         emptyMessage.classList.toggle('is-hidden', !(activeSet.size > 0 && visibleCount === 0));
@@ -501,7 +505,7 @@
         </div>
         <div class="target-content">
             {{- if (eq (len $target.Vulnerabilities) 0) }}
-            <p>No Vulnerabilities found</p>
+            <p class="section-empty">No vulnerabilities found in this section.</p>
             {{- else }}
             <table>
                 <tr>
@@ -530,7 +534,7 @@
             {{- end }}
 
             {{- if (eq (len $target.Misconfigurations ) 0) }}
-            <p>No Misconfigurations found</p>
+            <p class="section-empty">No misconfigurations found in this section.</p>
             {{- else }}
             <table>
                 <tr>
