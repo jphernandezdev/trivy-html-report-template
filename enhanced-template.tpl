@@ -155,8 +155,8 @@
             font-style: italic;
         }
 
-        .section-empty + .filter-empty {
-            padding-top: 0;
+        .target-content p.filter-empty {
+            padding-top: 1rem;
         }
 
         table {
