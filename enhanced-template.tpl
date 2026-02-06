@@ -155,6 +155,10 @@
             font-style: italic;
         }
 
+        .section-empty + .filter-empty {
+            padding-top: 0;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
