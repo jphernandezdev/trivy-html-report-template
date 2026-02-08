@@ -10,6 +10,7 @@ Trivy is a powerful vulnerability scanner for containers, Kubernetes, and code r
 - 📊 **Total vulnerability summary** - Get a quick overview of all detected vulnerabilities.
 - 📑 **Section-wise breakdown** - Easily navigate through categorized vulnerabilities.
 - 🔽 **Collapsible nodes** - Expand or collapse all vulnerability sections with a single click.
+- 🧭 **Severity filters** - Filter globally or per section by vulnerability severity.
 - 🌗 **Dark mode & Light mode support** - Seamless viewing experience in both themes.
 
 ## 📷 Screenshots
@@ -66,4 +67,3 @@ If you like this project, consider giving it a ⭐ on GitHub!
 🔗 **Learn more about Trivy:**
 - [Trivy GitHub Repository](https://github.com/aquasecurity/trivy)
 - [Trivy Documentation](https://aquasecurity.github.io/trivy/)
-

@@ -149,6 +149,16 @@
             padding-top: 0rem;
         }
 
+        .filter-empty {
+            padding: 1rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .target-content p.filter-empty {
+            padding-top: 1rem;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -374,7 +384,14 @@
                         table.classList.toggle('is-hidden', !tableVisible);
                     });
 
-                    section.classList.toggle('is-hidden', activeSet.size > 0 && visibleCount === 0);
+                    section.querySelectorAll('.section-empty').forEach(message => {
+                        message.classList.toggle('is-hidden', activeSet.size > 0);
+                    });
+
+                    const emptyMessage = section.querySelector('.filter-empty');
+                    if (emptyMessage) {
+                        emptyMessage.classList.toggle('is-hidden', !(activeSet.size > 0 && visibleCount === 0));
+                    }
                 });
             };
 
@@ -492,7 +509,7 @@
         </div>
         <div class="target-content">
             {{- if (eq (len $target.Vulnerabilities) 0) }}
-            <p>No Vulnerabilities found</p>
+            <p class="section-empty">No vulnerabilities found in this section.</p>
             {{- else }}
             <table>
                 <tr>
@@ -521,7 +538,7 @@
             {{- end }}
 
             {{- if (eq (len $target.Misconfigurations ) 0) }}
-            <p>No Misconfigurations found</p>
+            <p class="section-empty">No misconfigurations found in this section.</p>
             {{- else }}
             <table>
                 <tr>
@@ -546,6 +563,7 @@
                 {{- end }}
             </table>
             {{- end }}
+            <p class="filter-empty is-hidden">No matching items for the selected severity.</p>
         </div>
     </div>
     {{- end }}
